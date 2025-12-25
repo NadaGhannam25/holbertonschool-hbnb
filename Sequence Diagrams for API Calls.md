@@ -35,7 +35,7 @@ The user submits a review via the API. The Business Logic layer validates the re
 Design Note
 Centralised validation ensures data consistency and enforces business rules.
 
-Summary
+5. Summary
 These sequence diagrams demonstrate:
 •	Clear separation between layers
 •	Consistent request–response flow
