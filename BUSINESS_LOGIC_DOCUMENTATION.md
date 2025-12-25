@@ -26,3 +26,4 @@ This document provides a clear reference for implementing the HBnB Business Logi
 This layer is responsible for enforcing business rules and domain logic.
 BaseEntity ensures consistent lifecycle handling across all entities.
 _Last updated to improve documentation clarity._
+### 3. User Entity Overview
