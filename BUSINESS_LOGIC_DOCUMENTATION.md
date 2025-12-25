@@ -19,3 +19,4 @@ The Business Logic layer models core domain entities and business rules independ
 **Relationships**
 - One user can own multiple places
 - One user can submit multiple reviews
+## 4. Place Entity
