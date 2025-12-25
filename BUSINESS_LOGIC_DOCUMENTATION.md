@@ -7,3 +7,7 @@ The Business Logic layer models core domain entities and business rules independ
 - id (UUID)
 - created_at (DateTime)
 - updated_at (DateTime)
+**Methods**
+- save()
+- update()
+- delete()
