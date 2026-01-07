@@ -12,7 +12,36 @@ The application enables the management of users, places, reviews, and amenities 
 
 ## 📂 Project Structure
 
-<img width="250" height="332" alt="image" src="https://github.com/user-attachments/assets/781f7786-1c24-4980-96e8-507728492c16" />
+<pre style="white-space: pre; overflow-x: auto;">
+hbnb/
+├── app/
+│   ├── __init__.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       ├── users.py
+│   │       ├── places.py
+│   │       ├── reviews.py
+│   │       └── amenities.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── place.py
+│   │   ├── review.py
+│   │   └── amenity.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── facade.py
+│   └── persistence/
+│       ├── __init__.py
+│       └── repository.py
+├── run.py
+├── config.py
+├── requirements.txt
+└── README.md
+</pre>
+
 
 ---
 
