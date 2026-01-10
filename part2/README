@@ -23,4 +23,3 @@ Business Logic Layer: validation, rules, relationships
 
 Repository Layer: abstracts data storage (in-memory)
 
-All layer communication is handled through the Facade
