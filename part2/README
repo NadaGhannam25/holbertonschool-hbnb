@@ -15,7 +15,6 @@ Coordinate between the API and repository layers
 
 Architecture Overview
 
-The application follows a layered design:
 
 API Layer: handles HTTP requests and responses
 
