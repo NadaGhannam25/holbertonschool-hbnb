@@ -15,7 +15,6 @@ Coordinate between the API and repository layers
 
 Architecture Overview
 
-
 API Layer: handles HTTP requests and responses
 
 Business Logic Layer: validation, rules, relationships
