@@ -8,17 +8,16 @@ from app.models.place import Place
 from app.models.review import Review
 from app.models.amenity import Amenity
 
-
 class HBnBFacade:
     def __init__(self):
-	    self.session = SessionLocal()
+        self.session = SessionLocal()
         self.user_repo = UserRepository(self.session)
         self.place_repo = PlaceRepository(self.session)
         self.review_repo = ReviewRepository(self.session)
         self.amenity_repo = AmenityRepository(self.session)
 
     # ======================
-    # Users -old-
+    # Users
     # ======================
     def create_user(self, email, password, first_name=None, last_name=None):
         if not email or not password:
