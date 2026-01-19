@@ -1,4 +1,8 @@
-from app.repositories.in_memory_repository import InMemoryRepository
+from app.db.session import SessionLocal
+from app.repositories.user_repository import UserRepository
+from app.repositories.place_repository import PlaceRepository
+from app.repositories.review_repository import ReviewRepository
+from app.repositories.amenity_repository import AmenityRepository
 from app.models.user import User
 from app.models.place import Place
 from app.models.review import Review
@@ -7,13 +11,14 @@ from app.models.amenity import Amenity
 
 class HBnBFacade:
     def __init__(self):
-        self.user_repo = InMemoryRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+	    self.session = SessionLocal()
+        self.user_repo = UserRepository(self.session)
+        self.place_repo = PlaceRepository(self.session)
+        self.review_repo = ReviewRepository(self.session)
+        self.amenity_repo = AmenityRepository(self.session)
 
     # ======================
-    # Users
+    # Users -old-
     # ======================
     def create_user(self, email, password, first_name=None, last_name=None):
         if not email or not password:
@@ -47,7 +52,7 @@ class HBnBFacade:
     # ======================
     def create_place(self, place_data):
         owner_id = place_data.get("owner_id")
-        user = self.user_repo.get(owner_id)
+        user = self.user_repo.get_by_id(owner_id)
         if not user:
             raise ValueError("Owner not found")
 
@@ -64,7 +69,7 @@ class HBnBFacade:
         return self.place_repo.get_all()
 
     def get_place(self, place_id):
-        return self.place_repo.get(place_id)
+        return self.place_repo.get_by_id(place_id)
 
     # ======================
     # Reviews
@@ -73,13 +78,17 @@ class HBnBFacade:
         user_id = review_data.get("user_id")
         place_id = review_data.get("place_id")
 
-        user = self.user_repo.get(user_id)
+        user = self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
 
-        place = self.place_repo.get(place_id)
+        place = self.place_repo.get_by_id(place_id)
         if not place:
             raise ValueError("Place not found")
+
+        existing = self.review_repo.get_by_user_and_place(user_id, place_id)
+        if existing:
+            raise ValueError("Review already exists for this user and place")
 
         review = Review(
             text=review_data["text"],
@@ -89,12 +98,15 @@ class HBnBFacade:
         )
         self.review_repo.add(review)
         return review
-
+    
     def get_all_reviews(self):
         return self.review_repo.get_all()
-
+    
+    def get_review(self, review_id):
+        return self.review_repo.get_by_id(review_id)
+    
     # ======================
-    # Amenities
+    # Amenities -old-
     # ======================
     def create_amenity(self, amenity_data):
         if "name" not in amenity_data:
@@ -122,4 +134,3 @@ class HBnBFacade:
 
 
 facade = HBnBFacade()
-
