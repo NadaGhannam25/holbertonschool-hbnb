@@ -24,4 +24,12 @@ class Reviews(Resource):
     def get(self):
         """Get all reviews"""
         reviews = facade.get_all_reviews()
-        return [review.to_dict() for review in reviews]
+        return [review.to_dict() for review in reviews] , 200
+    
+@api.route('/<string:review_id>')
+class ReviewResource(Resource):
+    def get(self, review_id):
+        review = facade.get_review(review_id)
+        if not review:
+            api.abort(404, "Review not found")
+        return review.to_dict(), 200
