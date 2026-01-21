@@ -108,39 +108,37 @@ class HBnBFacade:
     # ======================
     # Amenities      
     # ======================
-def create_amenity(self, amenity_data):
-    if "name" not in amenity_data or not amenity_data["name"]:
-        raise ValueError("Amenity name is required")
+    def create_amenity(self, amenity_data):
+        if "name" not in amenity_data or not amenity_data["name"]:
+            raise ValueError("Amenity name is required")
 
-    existing = self.amenity_repo.get_by_name(amenity_data["name"])
-    if existing:
-        raise ValueError("Amenity already exists")
+        existing = self.amenity_repo.get_by_name(amenity_data["name"])
+        if existing:
+            raise ValueError("Amenity already exists")
 
-    amenity = Amenity(name=amenity_data["name"])
-    self.amenity_repo.add(amenity)
-    return amenity
+        amenity = Amenity(name=amenity_data["name"])
+        self.amenity_repo.add(amenity)
+        self.session.commit()
+        return amenity
 
+    def get_all_amenities(self):
+        return self.amenity_repo.get_all()
 
-def get_all_amenities(self):
-    return self.amenity_repo.get_all()
+    def get_amenity(self, amenity_id):
+        amenity = self.amenity_repo.get_by_id(amenity_id)
+        if not amenity:
+            raise ValueError("Amenity not found")
+        return amenity
 
+    def update_amenity(self, amenity_id, data):
+        amenity = self.amenity_repo.get_by_id(amenity_id)
+        if not amenity:
+            raise ValueError("Amenity not found")
 
-def get_amenity(self, amenity_id):
-    amenity = self.amenity_repo.get_by_id(amenity_id)
-    if not amenity:
-        raise ValueError("Amenity not found")
-    return amenity
+        if "name" in data and data["name"]:
+            amenity.name = data["name"]
 
-
-def update_amenity(self, amenity_id, data):
-    amenity = self.amenity_repo.get_by_id(amenity_id)
-    if not amenity:
-        raise ValueError("Amenity not found")
-
-    if "name" in data and data["name"]:
-        amenity.name = data["name"]
-
-    self.session.commit()
-    return amenity
-
+        self.session.commit()
+        return amenity
+        
 facade = HBnBFacade()
