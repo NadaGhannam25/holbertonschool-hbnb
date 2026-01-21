@@ -15,6 +15,7 @@ class HBnBFacade:
         self.user_repo = UserRepository(self.session)
         self.place_repo = PlaceRepository(self.session)
         self.review_repo = ReviewRepository(self.session)
+        self.amenity_repo = AmenityRepository(self.session)
 
     # ======================
     # Users
