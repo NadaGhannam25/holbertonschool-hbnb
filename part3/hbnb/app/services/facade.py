@@ -106,7 +106,7 @@ class HBnBFacade:
         return self.review_repo.get_by_id(review_id)
     
     # ======================
-    # Amenities -old-
+    # Amenities      
     # ======================
 def create_amenity(self, amenity_data):
     if "name" not in amenity_data or not amenity_data["name"]:
