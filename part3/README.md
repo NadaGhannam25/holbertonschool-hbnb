@@ -198,28 +198,27 @@ This section presents the results of the executed tests for the main system enti
 All tests were performed after completing the database integration in Part 3 to ensure correct persistence, validation, and API behavior.
 
 ---
-
 ### 1. User Tests
 
-![5](https://github.com/user-attachments/assets/590dbbef-0db9-4d0b-8b96-3e8cc10e0fb8)
-![6](https://github.com/user-attachments/assets/531e4c22-571e-4ed9-95a4-986e029aa9ac)
+<img src="https://github.com/user-attachments/assets/590dbbef-0db9-4d0b-8b96-3e8cc10e0fb8" alt="User Test 1" width="450">
 
+<img src="https://github.com/user-attachments/assets/531e4c22-571e-4ed9-95a4-986e029aa9ac" alt="User Test 2" width="450">
 
 ---
 
 ### 2. Place & Review Tests
 
-![1](https://github.com/user-attachments/assets/16eaa084-f50d-4793-9409-5aea3a640782)
-![2](https://github.com/user-attachments/assets/a51d2c2f-7fad-4a54-81ca-d280ec194493)
+<img src="https://github.com/user-attachments/assets/16eaa084-f50d-4793-9409-5aea3a640782" alt="Place Test" width="450">
 
+<img src="https://github.com/user-attachments/assets/a51d2c2f-7fad-4a54-81ca-d280ec194493" alt="Review Test" width="450">
 
 ---
 
 ### 3. Amenity Tests
 
-![3](https://github.com/user-attachments/assets/cc2dfa3e-6a3a-4daf-8196-cacf69ed7ba2)
-![4](https://github.com/user-attachments/assets/e8c6128f-0dba-4e39-9f38-3483b2f26cf2)
+<img src="https://github.com/user-attachments/assets/cc2dfa3e-6a3a-4daf-8196-cacf69ed7ba2" alt="Amenity Test 1" width="450">
 
+<img src="https://github.com/user-attachments/assets/e8c6128f-0dba-4e39-9f38-3483b2f26cf2" alt="Amenity Test 2" width="450">
 
 ---
 
