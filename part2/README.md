@@ -107,14 +107,18 @@ part2/
     │   │   └── __init__.py
     │   │   └── repository.py
     │   └── __init__.py
+    ├── tests/
+    │   ├── test_user.py
+    │   ├── test_place.py
+    │   ├── test_amenity.py
+    │   ├── test_review.py
+    │   └── test_base_model.py
     ├── run.py
     ├── README.md
     ├── config.py
     ├── requirements.txt
-    ├── simple_test_report.md
-    ├── test_models.py
-    ├── test_users.sh
-    └── test_amenities_places.sh
+    └── simple_test_report.md
+     
 ```
 ---
 ## Files Description
