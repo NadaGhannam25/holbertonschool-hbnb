@@ -38,10 +38,10 @@ class Review(BaseModel):
             raise TypeError("place must be a Place instance.")
 
     def to_dict(self):
-    return {
-        "id": self.id,
-        "text": self.text,
-        "rating": self.rating,
-        "user_id": self.user.id if self.user else None,
-        "place_id": self.place.id if self.place else None
-    }
+        return {
+            "id": self.id,
+            "text": self.text,
+            "rating": self.rating,
+            "user_id": self.user.id if self.user else None,
+            "place_id": self.place.id if self.place else None
+        }
