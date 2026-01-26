@@ -123,7 +123,8 @@ class Place(Resource):
             return _place_full(place), 200
         except (TypeError, ValueError) as e:
             api.abort(400, str(e))
-            @api.route('/<string:place_id>/reviews')
+
+@api.route('/<string:place_id>/reviews')
 class PlaceReviews(Resource):
 
     def get(self, place_id):
