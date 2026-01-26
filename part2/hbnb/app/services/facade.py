@@ -12,10 +12,10 @@ class HBnBFacade:
         self.review_repo: Repository = InMemoryRepository()
         self.amenity_repo: Repository = InMemoryRepository()
 
-
     # ======================
     # Users
     # ======================
+    
     def create_user(self, user_data):
         existing_users = self.user_repo.get_all()
         for user in existing_users:
@@ -39,6 +39,39 @@ class HBnBFacade:
 
     def get_user(self, user_id):
         return self.user_repo.get(user_id)
+
+    def update_user(self, user_id, user_data):
+        user = self.user_repo.get(user_id)
+        if not user:
+            return None
+
+        if not isinstance(user_data, dict):
+            raise TypeError("user_data must be a dictionary.")
+
+        if "first_name" in user_data:
+            first_name = user_data["first_name"]
+            if not isinstance(first_name, str):
+                raise TypeError("first_name must be a string.")
+            first_name = first_name.strip()
+            if not first_name:
+                raise ValueError("first_name is required.")
+            if len(first_name) > 50:
+                raise ValueError("first_name must be at most 50 characters.")
+            user.first_name = first_name
+
+        if "last_name" in user_data:
+            last_name = user_data["last_name"]
+            if not isinstance(last_name, str):
+                raise TypeError("last_name must be a string.")
+            last_name = last_name.strip()
+            if not last_name:
+                raise ValueError("last_name is required.")
+            if len(last_name) > 50:
+                raise ValueError("last_name must be at most 50 characters.")
+            user.last_name = last_name
+
+        user.save()
+        return user
 
     # ======================
     # Places
