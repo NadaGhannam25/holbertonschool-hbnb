@@ -77,17 +77,51 @@ class HBnBFacade:
     # Places
     # ======================
     def create_place(self, place_data):
-        owner_id = place_data.get('owner_id')
-        user = self.user_repo.get(owner_id)
-        if not user:
+        if not isinstance(place_data, dict):
+            raise TypeError("place_data must be a dictionary.")
+
+        # required fields
+        title = place_data.get("title")
+        owner_id = place_data.get("owner_id")
+
+        if owner_id is None:
+            raise ValueError("owner_id is required.")
+
+        # get owner object
+        owner = self.user_repo.get(owner_id)
+        if not owner:
             raise ValueError("Owner not found")
 
+        # optional fields
+        description = place_data.get("description", "")
+        price = place_data.get("price")
+        latitude = place_data.get("latitude")
+        longitude = place_data.get("longitude")
+        amenity_ids = place_data.get("amenities", [])
+
+        # validate amenities ids list
+        if amenity_ids is None:
+            amenity_ids = []
+        if not isinstance(amenity_ids, list):
+            raise TypeError("amenities must be a list of amenity ids.")
+
+        # create place (Place model will validate title/price/lat/long/owner)
         place = Place(
-            title=place_data['title'],
-            owner_id=owner_id,
-            description=place_data.get('description', ''),
-            price_per_night=place_data.get('price_per_night', 0)
+            owner=owner,
+            title=title,
+            price=price,
+            latitude=latitude,
+            longitude=longitude,
+            description=description
         )
+
+        # attach amenities
+        for amenity_id in amenity_ids:
+            amenity = self.amenity_repo.get(amenity_id)
+            if not amenity:
+                raise ValueError(f"Amenity not found: {amenity_id}")
+            place.add_amenity(amenity)
+
         self.place_repo.add(place)
         return place
 
@@ -96,6 +130,65 @@ class HBnBFacade:
 
     def get_place(self, place_id):
         return self.place_repo.get(place_id)
+
+    def update_place(self, place_id, data):
+        place = self.place_repo.get(place_id)
+        if not place:
+            return None
+
+        if not isinstance(data, dict):
+            raise TypeError("data must be a dictionary.")
+
+        # update allowed fields with validation (using Place setters / checks)
+        if "title" in data:
+            title = data["title"]
+            if not isinstance(title, str):
+                raise TypeError("title must be a string.")
+            title = title.strip()
+            if not title:
+                raise ValueError("title is required.")
+            if len(title) > 100:
+                raise ValueError("title must be at most 100 characters.")
+            place.title = title
+
+        if "description" in data:
+            desc = data["description"]
+            if desc is None:
+                desc = ""
+            if not isinstance(desc, str):
+                raise TypeError("description must be a string.")
+            place.description = desc.strip()
+
+        if "price" in data:
+            place.price = data["price"]  # validated by setter
+
+        if "latitude" in data:
+            place.latitude = data["latitude"]  # validated by setter
+
+        if "longitude" in data:
+            place.longitude = data["longitude"]  # validated by setter
+
+        # amenities update (optional): replace list if provided
+        if "amenities" in data:
+            amenity_ids = data["amenities"]
+            if amenity_ids is None:
+                amenity_ids = []
+            if not isinstance(amenity_ids, list):
+                raise TypeError("amenities must be a list of amenity ids.")
+
+            new_amenities = []
+            for amenity_id in amenity_ids:
+                amenity = self.amenity_repo.get(amenity_id)
+                if not amenity:
+                    raise ValueError(f"Amenity not found: {amenity_id}")
+                new_amenities.append(amenity)
+
+            place.amenities = []
+            for a in new_amenities:
+                place.add_amenity(a)
+
+        place.save()
+        return place
 
     # ======================
     # Reviews
