@@ -2,51 +2,22 @@ from app.extensions import db
 from app.models.base_model import BaseModel
 
 
-class Place(BaseModel):
-    tablename = "places"
+class Amenity(BaseModel):
+    tablename = "amenities"
 
-    # Basic fields
-    title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(1024), default="")
-    price_per_night = db.Column(db.Float, default=0.0, nullable=False)
+    name = db.Column(db.String(50), nullable=False, unique=True)
 
-    # Owner
-    owner_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
-
-    # Relationships
-    owner = db.relationship("User", back_populates="places")
-
-    reviews = db.relationship(
-        "Review",
-        back_populates="place",
-        cascade="all, delete-orphan"
-    )
-
-    amenities = db.relationship(
-        "Amenity",
+    # relationship many-to-many (مع Place عبر association table)
+    places = db.relationship(
+        "Place",
         secondary="place_amenity",
-        back_populates="places"
+        back_populates="amenities"
     )
 
-    def to_dict(self, include_amenities=True, include_reviews=False):
-        data = {
+    def to_dict(self):
+        return {
             "id": self.id,
-            "title": self.title,
-            "description": self.description,
-            "price_per_night": self.price_per_night,
-            "owner_id": self.owner_id,
+            "name": self.name,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
-
-        if include_amenities:
-            data["amenities"] = [
-                {"id": a.id, "name": a.name} for a in (self.amenities or [])
-            ]
-
-        if include_reviews:
-            data["reviews"] = [
-                r.to_dict() for r in (self.reviews or [])
-            ]
-
-        return data
