@@ -1,11 +1,10 @@
-from app.models.amenity import Amenity
 from app.repositories.sqlalchemy_repository import SQLAlchemyRepository
+from app.models.amenity import Amenity
 
 
 class AmenityRepository(SQLAlchemyRepository):
-    def __init__(self, session):
-        super().__init__(session, Amenity)
+    def init(self):
+        super().init(Amenity)
 
     def get_by_name(self, name):
-        """Get amenity by name"""
-        return self.session.query(Amenity).filter_by(name=name).first()
+        return Amenity.query.filter_by(name=name).first()
