@@ -1,10 +1,7 @@
 from sqlalchemy import Column, String, Boolean
-from flask_bcrypt import Bcrypt
 from sqlalchemy.orm import relationship
-
 from app.models.base_model import Base, BaseModel
-
-bcrypt = Bcrypt()
+from app.extensions import bcrypt
 
 
 class User(Base, BaseModel):
@@ -24,7 +21,7 @@ class User(Base, BaseModel):
 
     places = relationship("Place", back_populates="owner", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
-    
+
     def to_dict(self):
         return {
             "id": self.id,
