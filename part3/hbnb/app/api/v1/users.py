@@ -26,23 +26,37 @@ user_response_model = api.model("UserResponse", {
     "is_admin": fields.Boolean,
 })
 
+
+def require_admin():
+    claims = get_jwt()
+    if not claims.get("is_admin", False):
+        api.abort(403, "Admin privileges required")
+
+
 @api.route("/")
 class Users(Resource):
 
     @api.expect(user_model)
     @api.marshal_with(user_response_model, code=201)
+    @jwt_required()
     def post(self):
+        require_admin()
         data = api.payload
-        user = facade.create_user(
-            email=data["email"],
-            password=data["password"],
-            first_name=data.get("first_name"),
-            last_name=data.get("last_name"),
-        )
-        return user, 201
+        try:
+            user = facade.create_user(
+                email=data["email"],
+                password=data["password"],
+                first_name=data.get("first_name"),
+                last_name=data.get("last_name"),
+            )
+            return user, 201
+        except ValueError as e:
+            api.abort(400, str(e))
 
     @api.marshal_list_with(user_response_model)
+    @jwt_required()
     def get(self):
+        require_admin()
         return facade.user_repo.get_all(), 200
 
 
@@ -71,7 +85,7 @@ class User(Resource):
         if not user:
             api.abort(404, "User not found")
 
-        data = api.payload
+        data = api.payload or {}
 
         if "first_name" in data:
             user.first_name = data["first_name"]
@@ -79,9 +93,13 @@ class User(Resource):
             user.last_name = data["last_name"]
 
         if is_admin:
-            if "email" in data:
+            if "email" in data and data["email"]:
+                existing = facade.user_repo.get_by_email(data["email"])
+                if existing and existing.id != user.id:
+                    api.abort(400, "Email already exists")
                 user.email = data["email"]
-            if "password" in data:
+
+            if "password" in data and data["password"]:
                 user.set_password(data["password"])
 
         facade.user_repo.update()
