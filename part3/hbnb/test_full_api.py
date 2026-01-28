@@ -7,6 +7,9 @@ from config import DevelopmentConfig
 from app.extensions import db
 
 from app.models.user import User
+from app.models.place import Place, place_amenity
+from app.models.review import Review
+from app.models.amenity import Amenity
 
 
 def _headers(token: str | None = None):
@@ -42,6 +45,12 @@ class HBnBAllCasesTests(unittest.TestCase):
     def setUp(self):
         # fresh db per test (clean slate)
         with self.app.app_context():
+            # Clear association table first
+            db.session.execute(place_amenity.delete())
+            # Clear child tables, then parent tables
+            db.session.query(Review).delete()
+            db.session.query(Place).delete()
+            db.session.query(Amenity).delete()
             db.session.query(User).delete()
             db.session.commit()
 
@@ -103,6 +112,10 @@ class HBnBAllCasesTests(unittest.TestCase):
         self.assertEqual(r.status_code, 201, msg=r.get_data(as_text=True))
         return r.get_json()
 
+    def _assert_unauthorized_token(self, r):
+        # flask-jwt-extended commonly returns 401/422 depending on failure type
+        self.assertIn(r.status_code, (401, 422), msg=r.get_data(as_text=True))
+
     # -----------------------
     # Auth tests
     # -----------------------
@@ -113,6 +126,31 @@ class HBnBAllCasesTests(unittest.TestCase):
             headers=_headers(),
         )
         self.assertEqual(r.status_code, 401)
+
+    def test_auth_missing_fields_returns_4xx(self):
+        # Missing password
+        r1 = self.client.post(
+            "/api/v1/auth/login",
+            data=json.dumps({"email": "admin@example.com"}),
+            headers=_headers(),
+        )
+        self.assertIn(r1.status_code, (400, 422), msg=r1.get_data(as_text=True))
+
+        # Empty body
+        r2 = self.client.post("/api/v1/auth/login", data=json.dumps({}), headers=_headers())
+        self.assertIn(r2.status_code, (400, 422), msg=r2.get_data(as_text=True))
+
+    def test_protected_endpoints_invalid_token(self):
+        bad = "Bearer not-a-real-jwt"
+        r1 = self.client.get("/api/v1/users/", headers={"Authorization": bad})
+        self._assert_unauthorized_token(r1)
+
+        r2 = self.client.post(
+            "/api/v1/places/",
+            data=json.dumps({"title": "X", "description": "Y", "price_per_night": 10}),
+            headers={"Content-Type": "application/json", "Authorization": bad},
+        )
+        self._assert_unauthorized_token(r2)
 
     # -----------------------
     # Users tests
@@ -157,6 +195,13 @@ class HBnBAllCasesTests(unittest.TestCase):
         r = self.client.get("/api/v1/users/does-not-exist", headers=_headers())
         self.assertEqual(r.status_code, 404)
 
+    def test_users_get_existing_200(self):
+        r = self.client.get(f"/api/v1/users/{self.user_id}", headers=_headers())
+        self.assertEqual(r.status_code, 200, msg=r.get_data(as_text=True))
+        body = r.get_json() or {}
+        self.assertEqual(body.get("id"), self.user_id)
+        self.assertEqual(body.get("email"), "user@example.com")
+
     def test_users_put_regular_cannot_edit_other_user(self):
         r = self.client.put(
             f"/api/v1/users/{self.admin_id}",
@@ -177,11 +222,30 @@ class HBnBAllCasesTests(unittest.TestCase):
         self.assertEqual(body.get("first_name"), "New")
         self.assertEqual(body.get("last_name"), "Name")
 
-        # ✅ UPDATED: regular cannot edit email/password -> expect 400 in your API
+        # regular cannot edit email/password -> expect 400 in your API
         r2 = self.client.put(
             f"/api/v1/users/{self.user_id}",
             data=json.dumps({"email": "changed@example.com", "password": "newpass"}),
             headers=_headers(self.user_token),
+        )
+        self.assertEqual(r2.status_code, 400, msg=r2.get_data(as_text=True))
+
+    def test_users_admin_put_duplicate_email_400(self):
+        # create second user by admin
+        r1 = self.client.post(
+            "/api/v1/users/",
+            data=json.dumps({"email": "u2@example.com", "password": "p2", "first_name": "U2", "last_name": "U2"}),
+            headers=_headers(self.admin_token),
+        )
+        self.assertEqual(r1.status_code, 201, msg=r1.get_data(as_text=True))
+        u2_id = (r1.get_json() or {}).get("id")
+        self.assertTrue(u2_id)
+
+        # admin tries to set u2 email to existing user@example.com
+        r2 = self.client.put(
+            f"/api/v1/users/{u2_id}",
+            data=json.dumps({"email": "user@example.com"}),
+            headers=_headers(self.admin_token),
         )
         self.assertEqual(r2.status_code, 400, msg=r2.get_data(as_text=True))
 
@@ -202,6 +266,21 @@ class HBnBAllCasesTests(unittest.TestCase):
         )
         self.assertEqual(r.status_code, 401)
 
+    def test_places_create_missing_title_4xx(self):
+        r1 = self.client.post(
+            "/api/v1/places/",
+            data=json.dumps({"description": "x", "price_per_night": 10}),
+            headers=_headers(self.user_token),
+        )
+        self.assertIn(r1.status_code, (400, 422), msg=r1.get_data(as_text=True))
+
+        r2 = self.client.post(
+            "/api/v1/places/",
+            data=json.dumps({"title": "   ", "description": "x", "price_per_night": 10}),
+            headers=_headers(self.user_token),
+        )
+        self.assertEqual(r2.status_code, 400, msg=r2.get_data(as_text=True))
+
     def test_places_create_owner_forced_from_token(self):
         created = self._create_place_as_user(self.user_token, title="OwnerForced", price=55)
         self.assertEqual(created.get("title"), "OwnerForced")
@@ -215,7 +294,7 @@ class HBnBAllCasesTests(unittest.TestCase):
         created = self._create_place_as_user(self.user_token, title="Editable", price=10)
         place_id = created["id"]
 
-        # another user (admin) CAN edit because admin
+        # admin CAN edit because admin
         r_admin = self.client.put(
             f"/api/v1/places/{place_id}",
             data=json.dumps({"title": "AdminEdit"}),
@@ -233,7 +312,6 @@ class HBnBAllCasesTests(unittest.TestCase):
             u2.set_password("user2pass")
             db.session.add(u2)
             db.session.commit()
-            u2_id = u2.id
 
         u2_token = self._login("user2@example.com", "user2pass")
 
@@ -253,15 +331,15 @@ class HBnBAllCasesTests(unittest.TestCase):
         self.assertEqual(r_owner.status_code, 200, msg=r_owner.get_data(as_text=True))
         self.assertEqual((r_owner.get_json() or {}).get("title"), "OwnerEdited")
 
-    def test_places_delete_owner_or_admin(self):
+    def test_places_delete_owner_or_admin_and_then_404(self):
         created = self._create_place_as_user(self.user_token, title="ToDelete", price=33)
         place_id = created["id"]
 
         # another regular cannot delete
         with self.app.app_context():
-            u2 = User(email="user3@example.com", first_name="U3", last_name="U3", is_admin=False)
-            u2.set_password("user3pass")
-            db.session.add(u2)
+            u3 = User(email="user3@example.com", first_name="U3", last_name="U3", is_admin=False)
+            u3.set_password("user3pass")
+            db.session.add(u3)
             db.session.commit()
         u3_token = self._login("user3@example.com", "user3pass")
 
@@ -271,6 +349,10 @@ class HBnBAllCasesTests(unittest.TestCase):
         # admin can delete
         r_admin = self.client.delete(f"/api/v1/places/{place_id}", headers=_headers(self.admin_token))
         self.assertEqual(r_admin.status_code, 200, msg=r_admin.get_data(as_text=True))
+
+        # should be gone
+        r_get = self.client.get(f"/api/v1/places/{place_id}", headers=_headers())
+        self.assertEqual(r_get.status_code, 404)
 
     # -----------------------
     # Reviews tests
@@ -282,6 +364,32 @@ class HBnBAllCasesTests(unittest.TestCase):
             headers=_headers(),
         )
         self.assertEqual(r.status_code, 401)
+
+    def test_reviews_place_not_found_404(self):
+        # Need a logged-in token
+        r = self.client.post(
+            "/api/v1/reviews/",
+            data=json.dumps({"text": "X", "place_id": "no-such-place", "rating": 5}),
+            headers=_headers(self.user_token),
+        )
+        self.assertEqual(r.status_code, 404, msg=r.get_data(as_text=True))
+
+    def test_reviews_missing_text_4xx(self):
+        place = self._create_place_as_user(self.user_token, title="T1", price=10)
+        # reviewer: create another user
+        with self.app.app_context():
+            u2 = User(email="rev1@example.com", first_name="R", last_name="R", is_admin=False)
+            u2.set_password("revpass")
+            db.session.add(u2)
+            db.session.commit()
+        rev_token = self._login("rev1@example.com", "revpass")
+
+        r = self.client.post(
+            "/api/v1/reviews/",
+            data=json.dumps({"place_id": place["id"], "rating": 5}),
+            headers=_headers(rev_token),
+        )
+        self.assertIn(r.status_code, (400, 422), msg=r.get_data(as_text=True))
 
     def test_reviews_invalid_rating_400(self):
         place = self._create_place_as_user(self.user_token, title="Rated", price=10)
@@ -321,7 +429,31 @@ class HBnBAllCasesTests(unittest.TestCase):
         r3 = self._create_review_as_user(reviewer_token, place["id"], text="Again", rating=4)
         self.assertEqual(r3.status_code, 400)
 
-    def test_reviews_update_delete_owner_only_or_admin(self):
+    def test_reviews_update_invalid_rating_400(self):
+        place = self._create_place_as_user(self.user_token, title="PlaceForReview", price=10)
+
+        # create reviewer
+        with self.app.app_context():
+            u2 = User(email="updrev2@example.com", first_name="Up", last_name="Rev", is_admin=False)
+            u2.set_password("updrevpass")
+            db.session.add(u2)
+            db.session.commit()
+        reviewer_token = self._login("updrev2@example.com", "updrevpass")
+
+        # create review
+        r_create = self._create_review_as_user(reviewer_token, place["id"], text="Initial", rating=4)
+        self.assertEqual(r_create.status_code, 201, msg=r_create.get_data(as_text=True))
+        review_id = (r_create.get_json() or {}).get("id")
+
+        # update with invalid rating
+        r_bad = self.client.put(
+            f"/api/v1/reviews/{review_id}",
+            data=json.dumps({"rating": 0}),
+            headers=_headers(reviewer_token),
+        )
+        self.assertIn(r_bad.status_code, (400, 422), msg=r_bad.get_data(as_text=True))
+
+    def test_reviews_update_delete_owner_only_or_admin_and_then_404(self):
         place = self._create_place_as_user(self.user_token, title="PlaceForReview", price=10)
 
         # create reviewer
@@ -356,6 +488,10 @@ class HBnBAllCasesTests(unittest.TestCase):
         # admin can delete
         r_del = self.client.delete(f"/api/v1/reviews/{review_id}", headers=_headers(self.admin_token))
         self.assertEqual(r_del.status_code, 200, msg=r_del.get_data(as_text=True))
+
+        # should be gone
+        r_get = self.client.get(f"/api/v1/reviews/{review_id}", headers=_headers())
+        self.assertEqual(r_get.status_code, 404)
 
     # -----------------------
     # Amenities tests
@@ -398,6 +534,28 @@ class HBnBAllCasesTests(unittest.TestCase):
         )
         self.assertEqual(r_ok.status_code, 200, msg=r_ok.get_data(as_text=True))
         self.assertEqual((r_ok.get_json() or {}).get("name"), "Pool2")
+
+    def test_amenities_duplicate_name_400(self):
+        a1 = self._create_amenity_as_admin("Wifi")
+        self.assertTrue(a1.get("id"))
+
+        r = self.client.post(
+            "/api/v1/amenities/",
+            data=json.dumps({"name": "Wifi"}),
+            headers=_headers(self.admin_token),
+        )
+        self.assertEqual(r.status_code, 400, msg=r.get_data(as_text=True))
+
+    def test_amenities_update_to_existing_name_400(self):
+        a1 = self._create_amenity_as_admin("Wifi")
+        a2 = self._create_amenity_as_admin("Parking")
+
+        r = self.client.put(
+            f"/api/v1/amenities/{a2['id']}",
+            data=json.dumps({"name": "Wifi"}),
+            headers=_headers(self.admin_token),
+        )
+        self.assertEqual(r.status_code, 400, msg=r.get_data(as_text=True))
 
 
 if __name__ == "__main__":
