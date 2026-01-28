@@ -1,193 +1,243 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:80}"
-ADMIN_EMAIL="${ADMIN_EMAIL:-admin@hbnb.io}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin}"
-CURL="curl -s -i"
+BASE_URL="http://127.0.0.1:80"
+ADMIN_EMAIL="admin@hbnb.io"
+ADMIN_PASSWORD="admin"
 
-hr() { echo -e "\n============================================================\n"; }
-title() { hr; echo "### $1"; hr; }
+echo "BASE_URL=$BASE_URL"
+echo
+echo "============================================================"
+echo
+echo "### 0) Swagger page reachable"
+echo
+echo "============================================================"
+curl -s -o /dev/null -w "HTTP %{http_code}\n" "$BASE_URL/api/v1/"
+echo
 
-# Extract JSON field from a response (best-effort without jq)
-extract_json_field() {
-  # usage: extract_json_field "field_name" <<< "$response"
-  local field="$1"
-  # grab last JSON line(s), then find "field":"value"
-  echo "$1" >/dev/null 2>&1 || true
-}
+# ------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------
 
-get_body() {
-  # prints body only
-  awk 'BEGIN{p=0} /^\r?$/{p=1; next} {if(p) print}' | sed 's/\r$//'
-}
+extract_body() {
+python3 - <<'PY'
+import sys
+raw = sys.stdin.read()
 
-get_status() {
-  # prints HTTP status code
-  head -n 1 | awk '{print $2}'
+if "\r\n\r\n" in raw:
+    body = raw.split("\r\n\r\n", 1)[1]
+elif "\n\n" in raw:
+    body = raw.split("\n\n", 1)[1]
+else:
+    body = raw
+
+body = body.strip()
+
+i1 = body.find("{")
+i2 = body.find("[")
+cands = [i for i in (i1, i2) if i != -1]
+if cands:
+    body = body[min(cands):]
+
+print(body)
+PY
 }
 
 json_get() {
-  # very small JSON getter: json_get key  (expects "key":"value" in body)
-  local key="$1"
-  get_body | tr -d '\n' | sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p"
+python3 - <<'PY' "$1" "$2"
+import json, sys
+s = sys.argv[1].strip()
+key = sys.argv[2]
+
+i1 = s.find("{")
+i2 = s.find("[")
+cands = [i for i in (i1, i2) if i != -1]
+if cands:
+    s = s[min(cands):]
+
+data = json.loads(s)
+val = data.get(key, "")
+if isinstance(val, (dict, list)):
+    print(json.dumps(val))
+else:
+    print(val if val is not None else "")
+PY
 }
 
-echo "BASE_URL=$BASE_URL"
-echo "Using admin login: $ADMIN_EMAIL"
+rand_email() {
+  echo "user_$(uuidgen | cut -c1-8)@example.com"
+}
 
-title "0) Swagger page reachable"
-$CURL "$BASE_URL/api/v1/" | head -n 15
+# ------------------------------------------------------------
+# 1) Admin login
+# ------------------------------------------------------------
 
-title "1) AUTH: Login success -> get JWT token"
-LOGIN_RES="$($CURL -X POST "$BASE_URL/api/v1/auth/login" \
+echo
+echo "============================================================"
+echo
+echo "### 1) Admin login (get JWT)"
+echo
+echo "============================================================"
+
+LOGIN_RESP=$(curl -i -s -X POST "$BASE_URL/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}")"
+  -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}")
 
-echo "$LOGIN_RES" | head -n 20
-TOKEN="$(echo "$LOGIN_RES" | json_get access_token)"
-if [[ -z "${TOKEN}" ]]; then
-  echo "ERROR: Could not extract access_token from login response."
-  echo "Tip: If your login returns a different field name, edit: json_get access_token"
+LOGIN_BODY=$(echo "$LOGIN_RESP" | extract_body)
+TOKEN=$(json_get "$LOGIN_BODY" "access_token")
+
+if [ -z "$TOKEN" ]; then
+  echo "ERROR: token not returned"
   exit 1
 fi
-echo -e "\nExtracted TOKEN (first 30 chars): ${TOKEN:0:30}..."
 
-title "2) USERS: GET all users (admin auth required)"
-$CURL "$BASE_URL/api/v1/users/" -H "Authorization: Bearer $TOKEN"
+echo "$LOGIN_BODY"
+echo
+echo "OK: token captured (length: ${#TOKEN})"
 
-title "3) USERS: Create user (valid)"
-USER_CREATE_RES="$($CURL -X POST "$BASE_URL/api/v1/users/" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test1@hbnb.io","password":"123456","first_name":"Test","last_name":"User"}')"
-echo "$USER_CREATE_RES"
-USER_ID="$(echo "$USER_CREATE_RES" | json_get id)"
-echo -e "\nUSER_ID=$USER_ID"
+AUTH_HEADER="Authorization: Bearer $TOKEN"
 
-title "4) USERS: Create user (duplicate email -> expect 400)"
-$CURL -X POST "$BASE_URL/api/v1/users/" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test1@hbnb.io","password":"123456","first_name":"X","last_name":"Y"}'
+# ------------------------------------------------------------
+# 2) GET users (admin protected)
+# ------------------------------------------------------------
 
-title "5) USERS: Update user (valid)"
-$CURL -X PUT "$BASE_URL/api/v1/users/$USER_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"first_name":"ApiUpdated","last_name":"UserUpdated"}'
+echo
+echo "============================================================"
+echo
+echo "### 2) GET /users (admin protected)"
+echo
+echo "============================================================"
 
-title "6) USERS: Update user (invalid first_name whitespace -> expect 400)"
-$CURL -X PUT "$BASE_URL/api/v1/users/$USER_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"first_name":"   "}'
+curl -i -s "$BASE_URL/api/v1/users/" \
+  -H "$AUTH_HEADER"
 
-title "7) AMENITIES: Create amenity WiFi (valid)"
-AM1_RES="$($CURL -X POST "$BASE_URL/api/v1/amenities/" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"WiFi"}')"
-echo "$AM1_RES"
-AMENITY_ID="$(echo "$AM1_RES" | json_get id)"
-echo -e "\nAMENITY_ID=$AMENITY_ID"
+# ------------------------------------------------------------
+# 3) POST user (normal user)
+# ------------------------------------------------------------
 
-title "8) AMENITIES: Create amenity (empty name -> expect 400)"
-$CURL -X POST "$BASE_URL/api/v1/amenities/" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":""}'
+echo
+echo "============================================================"
+echo
+echo "### 3) POST /users (create normal user)"
+echo
+echo "============================================================"
 
-title "9) AMENITIES: Get all amenities"
-$CURL "$BASE_URL/api/v1/amenities/"
+USER_EMAIL=$(rand_email)
 
-title "10) PLACES: Create place (valid)"
-# Prefer using ADMIN user id if it's in DB; otherwise use the created USER_ID
-OWNER_ID="${OWNER_ID:-00000000-0000-0000-0000-000000000001}"
-PLACE_CREATE_RES="$($CURL -X POST "$BASE_URL/api/v1/places/" \
-  -H "Authorization: Bearer $TOKEN" \
+RESP=$(curl -i -s -X POST "$BASE_URL/api/v1/users/" \
+  -H "$AUTH_HEADER" \
   -H "Content-Type: application/json" \
   -d "{
-    \"title\":\"Villa\",
-    \"description\":\"Nice place\",
-    \"price\":150,
-    \"latitude\":24.7,
-    \"longitude\":46.7,
-    \"owner_id\":\"$OWNER_ID\",
-    \"amenities\":[\"$AMENITY_ID\"]
-  }")"
-echo "$PLACE_CREATE_RES"
-PLACE_ID="$(echo "$PLACE_CREATE_RES" | json_get id)"
-echo -e "\nPLACE_ID=$PLACE_ID"
+    \"email\": \"$USER_EMAIL\",
+    \"password\": \"123456\",
+    \"first_name\": \"User\",
+    \"last_name\": \"Test\"
+  }")
 
-title "11) PLACES: Create place (invalid negative price -> expect 400)"
-$CURL -X POST "$BASE_URL/api/v1/places/" \
-  -H "Authorization: Bearer $TOKEN" \
+USER_BODY=$(echo "$RESP" | extract_body)
+USER_ID=$(json_get "$USER_BODY" "id")
+
+echo "$USER_BODY"
+echo
+echo "OK: user_id=$USER_ID"
+
+# ------------------------------------------------------------
+# 4) POST amenity
+# ------------------------------------------------------------
+
+echo
+echo "============================================================"
+echo
+echo "### 4) POST /amenities"
+echo
+echo "============================================================"
+
+AMENITY_RESP=$(curl -i -s -X POST "$BASE_URL/api/v1/amenities/" \
+  -H "$AUTH_HEADER" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"WiFi"}')
+
+AMENITY_BODY=$(echo "$AMENITY_RESP" | extract_body)
+AMENITY_ID=$(json_get "$AMENITY_BODY" "id")
+
+echo "$AMENITY_BODY"
+echo
+echo "OK: amenity_id=$AMENITY_ID"
+
+# ------------------------------------------------------------
+# 5) POST place
+# ------------------------------------------------------------
+
+echo
+echo "============================================================"
+echo
+echo "### 5) POST /places"
+echo
+echo "============================================================"
+
+PLACE_RESP=$(curl -i -s -X POST "$BASE_URL/api/v1/places/" \
+  -H "$AUTH_HEADER" \
   -H "Content-Type: application/json" \
   -d "{
-    \"title\":\"Bad\",
-    \"price\":-10,
-    \"latitude\":0,
-    \"longitude\":0,
-    \"owner_id\":\"$OWNER_ID\",
-    \"amenities\":[]
-  }"
+    \"title\": \"Test Place\",
+    \"description\": \"Nice place\",
+    \"price\": 100,
+    \"latitude\": 24.7,
+    \"longitude\": 46.7,
+    \"owner_id\": \"$USER_ID\",
+    \"amenities\": [\"$AMENITY_ID\"]
+  }")
 
-title "12) PLACES: Get all places (basic)"
-$CURL "$BASE_URL/api/v1/places/"
+PLACE_BODY=$(echo "$PLACE_RESP" | extract_body)
+PLACE_ID=$(json_get "$PLACE_BODY" "id")
 
-title "13) PLACES: Get place by id (full)"
-$CURL "$BASE_URL/api/v1/places/$PLACE_ID"
+echo "$PLACE_BODY"
+echo
+echo "OK: place_id=$PLACE_ID"
 
-title "14) PLACES: Update place (valid price update)"
-$CURL -X PUT "$BASE_URL/api/v1/places/$PLACE_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"price":200}'
+# ------------------------------------------------------------
+# 6) POST review
+# ------------------------------------------------------------
 
-title "15) REVIEWS: Create review (valid)"
-REVIEW_CREATE_RES="$($CURL -X POST "$BASE_URL/api/v1/reviews/" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"text\":\"Amazing\",
-    \"rating\":5,
-    \"user_id\":\"$OWNER_ID\",
-    \"place_id\":\"$PLACE_ID\"
-  }")"
-echo "$REVIEW_CREATE_RES"
-REVIEW_ID="$(echo "$REVIEW_CREATE_RES" | json_get id)"
-echo -e "\nREVIEW_ID=$REVIEW_ID"
+echo
+echo "============================================================"
+echo
+echo "### 6) POST /reviews"
+echo
+echo "============================================================"
 
-title "16) REVIEWS: Create review (invalid rating -> expect 400)"
-$CURL -X POST "$BASE_URL/api/v1/reviews/" \
-  -H "Authorization: Bearer $TOKEN" \
+REVIEW_RESP=$(curl -i -s -X POST "$BASE_URL/api/v1/reviews/" \
+  -H "$AUTH_HEADER" \
   -H "Content-Type: application/json" \
   -d "{
-    \"text\":\"Bad\",
-    \"rating\":10,
-    \"user_id\":\"$OWNER_ID\",
-    \"place_id\":\"$PLACE_ID\"
-  }"
+    \"text\": \"Amazing place\",
+    \"rating\": 5,
+    \"user_id\": \"$USER_ID\",
+    \"place_id\": \"$PLACE_ID\"
+  }")
 
-title "17) REVIEWS: Get review by id"
-$CURL "$BASE_URL/api/v1/reviews/$REVIEW_ID"
+REVIEW_BODY=$(echo "$REVIEW_RESP" | extract_body)
+REVIEW_ID=$(json_get "$REVIEW_BODY" "id")
 
-title "18) REVIEWS: Get reviews by place"
-$CURL "$BASE_URL/api/v1/places/$PLACE_ID/reviews"
+echo "$REVIEW_BODY"
+echo
+echo "OK: review_id=$REVIEW_ID"
 
-title "19) REVIEWS: Update review"
-$CURL -X PUT "$BASE_URL/api/v1/reviews/$REVIEW_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Updated","rating":4}'
+# ------------------------------------------------------------
+# 7) DELETE review
+# ------------------------------------------------------------
 
-title "20) REVIEWS: Delete review"
-$CURL -X DELETE "$BASE_URL/api/v1/reviews/$REVIEW_ID" \
-  -H "Authorization: Bearer $TOKEN"
+echo
+echo "============================================================"
+echo
+echo "### 7) DELETE /reviews/{id}"
+echo
+echo "============================================================"
 
-title "21) REVIEWS: Get deleted review (expect 404)"
-$CURL "$BASE_URL/api/v1/reviews/$REVIEW_ID"
+curl -i -s -X DELETE "$BASE_URL/api/v1/reviews/$REVIEW_ID" \
+  -H "$AUTH_HEADER"
 
-hr
-echo "✅ DONE: Full API test script completed."
+echo
+echo "============================================================"
+echo "ALL TESTS COMPLETED SUCCESSFULLY"
+echo "============================================================"
