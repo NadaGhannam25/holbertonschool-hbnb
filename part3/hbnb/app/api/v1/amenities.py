@@ -59,3 +59,13 @@ class AmenityResource(Resource):
             if msg == "Amenity not found":
                 api.abort(404, msg)
             api.abort(400, msg)
+    @jwt_required()
+    def delete(self, amenity_id):
+        require_admin()
+
+        amenity = facade.get_amenity(amenity_id)
+        if not amenity:
+            api.abort(404, "Amenity not found")
+
+        facade.amenity_repo.delete(amenity)
+        return {"message": "Amenity deleted"}, 200
