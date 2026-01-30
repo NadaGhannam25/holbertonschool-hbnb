@@ -3,7 +3,7 @@ set -e
 
 BASE_URL="http://127.0.0.1:5000/api/v1"
 ADMIN_EMAIL="admin@hbnb.io"
-ADMIN_PASSWORD="admin1234"
+ADMIN_PASSWORD="admin123"
 
 AMENITY_NAME="Amenity_$(date +%s)"
 UPDATED_AMENITY_NAME="Updated_$(date +%s)"

@@ -13,7 +13,7 @@ echo "=============================="
 # ------------------------------
 ADMIN_LOGIN=$(curl -s -X POST $BASE_URL/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@hbnb.io","password":"admin1234"}')
+  -d '{"email":"admin@hbnb.io","password":"admin123"}')
 
 ADMIN_TOKEN=$(python3 - <<EOF
 import json
