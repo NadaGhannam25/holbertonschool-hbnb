@@ -157,7 +157,13 @@ part3/
 - Application level (Facade validation)
 - Database level (unique constraint).
 ---
+## Database Design – ER Diagram
 
+The ER Diagram below illustrates how **Users, Places, Reviews, and Amenities** are related, including primary keys, foreign keys, and association tables.
+
+<img src="ER_diagram.png" width="400">
+
+---
 ## Testing
 *The project can be tested using:*
 
