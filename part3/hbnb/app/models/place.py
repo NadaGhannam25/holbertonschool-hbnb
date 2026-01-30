@@ -28,8 +28,8 @@ class Place(BaseModel):
     price_per_night = db.Column(db.Float, default=0.0, nullable=False)
     
     # ✅ FIXED: Added latitude and longitude fields
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
 
     # Owner
     owner_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
