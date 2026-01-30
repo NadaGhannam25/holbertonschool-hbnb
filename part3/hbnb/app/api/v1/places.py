@@ -7,13 +7,17 @@ api = Namespace("places", description="Place operations")
 place_create_model = api.model("PlaceCreate", {
     "title": fields.String(required=True, description="Place title"),
     "description": fields.String(description="Place description"),
-    "price_per_night": fields.Float(description="Price per night")
+    "price_per_night": fields.Float(description="Price per night"),
+    "latitude": fields.Float(required=True, description="Latitude (-90 to 90)"),
+    "longitude": fields.Float(required=True, description="Longitude (-180 to 180)"),
 })
 
 place_update_model = api.model("PlaceUpdate", {
     "title": fields.String(description="Place title"),
     "description": fields.String(description="Place description"),
-    "price_per_night": fields.Float(description="Price per night")
+    "price_per_night": fields.Float(description="Price per night"),
+    "latitude": fields.Float(description="Latitude (-90 to 90)"),
+    "longitude": fields.Float(description="Longitude (-180 to 180)"),
 })
 
 
@@ -64,10 +68,19 @@ class PlaceResource(Resource):
 
         if "title" in data and data["title"] is not None:
             place.title = data["title"]
+
         if "description" in data and data["description"] is not None:
             place.description = data["description"]
+
         if "price_per_night" in data and data["price_per_night"] is not None:
             place.price_per_night = data["price_per_night"]
+
+        # ✅ Added latitude & longitude updates
+        if "latitude" in data and data["latitude"] is not None:
+            place.latitude = data["latitude"]
+
+        if "longitude" in data and data["longitude"] is not None:
+            place.longitude = data["longitude"]
 
         facade.place_repo.update()
         return place.to_dict(), 200
