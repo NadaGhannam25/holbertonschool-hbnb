@@ -35,7 +35,6 @@ class Reviews(Resource):
         if not place:
             api.abort(404, "Place not found")
 
-        # حسب التوثيق: 400
         if place.owner_id == current_user_id:
             api.abort(400, "You cannot review your own place")
 
