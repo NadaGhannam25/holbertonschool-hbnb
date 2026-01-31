@@ -157,6 +157,8 @@ part3/
 - Application level (Facade validation)
 - Database level (unique constraint).
 ---
+
+
 ## Database Design – ER Diagram
 
 The ER Diagram below illustrates how **Users, Places, Reviews, and Amenities** are related, including primary keys, foreign keys, and association tables.
@@ -179,18 +181,29 @@ curl -X POST http://127.0.0.1:5000/api/v1/users \
 
 ## How to Run the Project
 
-1- **Install dependencies:**
+# **Install dependencies:**
 ```
 pip install -r requirements.txt
 ```
-2- **Start the application:**
+# Prerequisites Installation
+```
+apt update
+apt install sqlite3 -y
+sqlite3 --version
+```
+# **Start the application:**
 ```
 python3 run.py
 ```
 
-3- **Access the API:**
+# **Access the API:**
 ```
 http://127.0.0.1:5000/api/v1/
+```
+## Run Tests
+```
+chmod +x test_complete_api.sh
+./test_complete_api.sh
 ```
 ---
 ## Test Results
