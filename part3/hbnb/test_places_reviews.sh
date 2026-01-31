@@ -9,9 +9,9 @@ echo "BASE_URL: $BASE_URL"
 echo "API_BASE:  $API_BASE"
 echo
 
-# ---------- helpers ----------
+
 req() {
-  # usage: req METHOD URL JSON(optional)
+
   local method="$1"
   local url="$2"
   local data="${3:-}"
@@ -73,7 +73,7 @@ assert_status() {
   echo "$msg ($got)"
 }
 
-# ---------- 0) smoke tests ----------
+
 echo "== 0) Smoke Tests =="
 RESP="$(req GET "$API_BASE/places/")"
 CODE="$(printf "%s" "$RESP" | status_code)"
@@ -84,7 +84,7 @@ CODE="$(printf "%s" "$RESP" | status_code)"
 assert_status "$CODE" "200" "GET /reviews/"
 echo
 
-# ---------- 1) create user ----------
+
 echo "== 1) Create User =="
 RAND="$(python3 - <<'PY'
 import uuid
@@ -105,7 +105,7 @@ JSON
 RESP="$(req POST "$API_BASE/users/" "$USER_PAYLOAD")"
 CODE="$(printf "%s" "$RESP" | status_code)"
 BODY="$(printf "%s" "$RESP" | body_only)"
-# Some projects return 201, some 200. Accept both.
+
 if [[ "$CODE" != "201" && "$CODE" != "200" ]]; then
   echo "Create user failed (expected 200 or 201, got $CODE)"
   echo "$BODY"
@@ -121,7 +121,7 @@ fi
 echo "USER_ID: $USER_ID"
 echo
 
-# ---------- 2) create place ----------
+
 echo "== 2) Create Place =="
 PLACE_PAYLOAD="$(cat <<JSON
 {
@@ -151,7 +151,7 @@ CODE="$(printf "%s" "$RESP" | status_code)"
 assert_status "$CODE" "200" "GET /places/<id>"
 echo
 
-# ---------- 4) create review ----------
+
 echo "== 4) Create Review =="
 REVIEW_PAYLOAD="$(cat <<JSON
 {
@@ -175,7 +175,7 @@ fi
 echo "REVIEW_ID: $REVIEW_ID"
 echo
 
-# ---------- 5) duplicate review should fail ----------
+
 echo "== 5) Duplicate Review Must Fail =="
 DUP_PAYLOAD="$(cat <<JSON
 {
@@ -190,19 +190,17 @@ RESP="$(req POST "$API_BASE/reviews/" "$DUP_PAYLOAD")"
 CODE="$(printf "%s" "$RESP" | status_code)"
 BODY="$(printf "%s" "$RESP" | body_only)"
 
-# Expected 400 (your API uses ValueError -> abort(400,...))
+
 assert_status "$CODE" "400" "POST /reviews/ duplicate (should be 400)"
 echo "Message: $(printf "%s" "$BODY" | json_get message)"
 echo
 
-# ---------- 6) get all reviews ----------
 echo "== 6) Get All Reviews =="
 RESP="$(req GET "$API_BASE/reviews/")"
 CODE="$(printf "%s" "$RESP" | status_code)"
 assert_status "$CODE" "200" "GET /reviews/"
 echo
 
-# ---------- 7) get review by id (if endpoint exists) ----------
 echo "== 7) Get Review By ID (if enabled) =="
 RESP="$(req GET "$API_BASE/reviews/$REVIEW_ID")"
 CODE="$(printf "%s" "$RESP" | status_code)"
