@@ -10,7 +10,7 @@ class SQLAlchemyRepository:
         return obj
 
     def get_by_id(self, obj_id):
-        # بدل Query.get (Legacy) استخدم Session.get
+        
         return db.session.get(self.model, obj_id)
 
     def get_all(self):
