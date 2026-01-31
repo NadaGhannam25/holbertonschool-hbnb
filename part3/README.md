@@ -1,3 +1,4 @@
+# HBnB – part3 : Database Integration and Persistence
 This project represents **Part 3** of the HBnB (Holberton Bed & Breakfast) application.  
 In this phase, the system transitions from **in-memory data storage** to a **database-backed persistence layer** using a relational database.
 
