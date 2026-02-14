@@ -43,7 +43,7 @@ class Place(BaseModel):
     amenities = db.relationship(
         "Amenity",
         secondary=place_amenity,
-        backref="places"
+        backref=db.backref("places", lazy="dynamic")
     )
 
 
