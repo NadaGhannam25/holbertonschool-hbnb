@@ -322,7 +322,7 @@ select:focus {
 .border-purple-600 { border-color: var(--lavender) !important; }
 .ring-purple-600 { --tw-ring-color: rgba(155, 123, 184, 0.45) !important; }
 
-/* Focus ring used by inputs sometimes */
+
 .focus\:ring-purple-600:focus { --tw-ring-color: rgba(155, 123, 184, 0.45) !important; }
 .focus\:border-purple-600:focus { border-color: var(--lavender) !important; }
 
