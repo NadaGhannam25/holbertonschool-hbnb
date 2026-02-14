@@ -3,7 +3,7 @@ from app.models.base_model import BaseModel
 
 
 class Amenity(BaseModel):
-    tablename = "amenities"
+    __tablename__ = "amenities"
 
     name = db.Column(db.String(50), nullable=False, unique=True)
 
