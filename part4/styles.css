@@ -318,7 +318,7 @@ select:focus {
 .text-purple-600 { color: var(--lavender) !important; }
 .hover\:text-purple-600:hover { color: var(--lavender) !important; }
 
-/* Borders */
+
 .border-purple-600 { border-color: var(--lavender) !important; }
 .ring-purple-600 { --tw-ring-color: rgba(155, 123, 184, 0.45) !important; }
 
