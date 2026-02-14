@@ -20,7 +20,6 @@ place_update_model = api.model("PlaceUpdate", {
     "longitude": fields.Float(description="Longitude (-180 to 180)"),
 })
 
-
 @api.route("/")
 class Places(Resource):
     def get(self):
