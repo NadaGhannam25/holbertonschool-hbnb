@@ -7,4 +7,4 @@ def get_engine(env="development"):
         config[env].SQLALCHEMY_DATABASE_URI,
         echo=False,
         future=True
-    )
+    ) 
