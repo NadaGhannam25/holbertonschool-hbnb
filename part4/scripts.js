@@ -250,10 +250,10 @@ async function fetchPlaceDetails(id) {
 }
 
 async function fetchReviews(placeId) {
-    console.log('🔍 Fetching reviews for place:', placeId);
+    console.log(' Fetching reviews for place:', placeId);
     try {
         const url = `${API_URL}/reviews/?place_id=${placeId}`;
-        console.log('📡 Full URL:', url);
+        console.log(' Full URL:', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -262,24 +262,24 @@ async function fetchReviews(placeId) {
             }
         });
         
-        console.log('📨 Response status:', response.status);
-        console.log('📨 Response headers:', response.headers);
+        console.log('Response status:', response.status);
+        console.log(' Response headers:', response.headers);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Response error:', errorText);
+            console.error(' Response error:', errorText);
             return [];
         }
         
         const data = await response.json();
-        console.log('📦 Reviews data:', data);
-        console.log('📊 Number of reviews:', Array.isArray(data) ? data.length : 'Not an array');
+        console.log(' Reviews data:', data);
+        console.log(' Number of reviews:', Array.isArray(data) ? data.length : 'Not an array');
         
         return Array.isArray(data) ? data : [];
     } catch (error) {
-        console.error('💥 Fetch error:', error);
-        console.error('💥 Error type:', error.name);
-        console.error('💥 Error message:', error.message);
+        console.error(' Fetch error:', error);
+        console.error(' Error type:', error.name);
+        console.error(' Error message:', error.message);
         return [];
     }
 }
@@ -412,7 +412,7 @@ async function displayPlaceDetails() {
             }
         }
     } catch (error) {
-        console.error('💥 Error:', error);
+        console.error('Error:', error);
         container.innerHTML = '<div class="text-center py-12 text-red-600">Error loading details</div>';
     }
 }
