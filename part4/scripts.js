@@ -539,7 +539,7 @@ function setupReviewForm(placeId) {
         const rating = parseInt(ratingInput.value);
         const text = textInput.value.trim();
 
-        console.log('📤 Submitting - Rating:', rating, 'Text:', text);
+        console.log(' Submitting - Rating:', rating, 'Text:', text);
 
         // Validation
         if (!rating || rating === 0) {
