@@ -416,3 +416,171 @@ async function displayPlaceDetails() {
         container.innerHTML = '<div class="text-center py-12 text-red-600">Error loading details</div>';
     }
 }
+
+
+// ========== Star Rating ==========
+let currentRating = 0;
+
+function setupStarRating() {
+    console.log(' Setting up star rating...');
+    
+    const starContainer = document.getElementById('star-rating');
+    const ratingInput = document.getElementById('rating-value');
+    
+    if (!starContainer || !ratingInput) {
+        console.error(' Star elements not found!');
+        return;
+    }
+    
+    const stars = starContainer.querySelectorAll('i');
+    
+    if (!stars.length) {
+        console.error(' No star icons found!');
+        return;
+    }
+    
+    console.log(' Found', stars.length, 'stars');
+    
+    // Reset
+    currentRating = 0;
+    ratingInput.value = 0;
+    
+    // Add event listeners to each star
+    stars.forEach((star, index) => {
+        const rating = index + 1;
+        
+        // Hover effect
+        star.addEventListener('mouseenter', () => {
+            updateStars(stars, rating);
+        });
+        
+        // Click to select
+        star.addEventListener('click', () => {
+            currentRating = rating;
+            ratingInput.value = rating;
+            updateStars(stars, rating);
+            console.log(' Rating selected:', rating);
+        });
+    });
+    
+    // Reset on mouse leave
+    starContainer.addEventListener('mouseleave', () => {
+        updateStars(stars, currentRating);
+    });
+    
+    console.log(' Star rating initialized');
+}
+
+function updateStars(stars, rating) {
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.remove('far', 'text-gray-300');
+            star.classList.add('fas', 'text-yellow-500');
+        } else {
+            star.classList.remove('fas', 'text-yellow-500');
+            star.classList.add('far', 'text-gray-300');
+        }
+    });
+}
+
+// ========== Review Submission ==========
+async function submitReview(placeId, rating, text) {
+    const token = getCookie('token');
+    
+    if (!token) {
+        throw new Error('You must be logged in');
+    }
+
+    const response = await fetch(`${API_URL}/reviews/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+            place_id: placeId, 
+            rating: parseInt(rating), 
+            text: text 
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit');
+    }
+
+    return await response.json();
+}
+
+function setupReviewForm(placeId) {
+    const form = document.getElementById('review-form');
+    if (!form) {
+        console.warn(' Review form not found');
+        return;
+    }
+
+    console.log(' Setting up review form for place:', placeId);
+    
+    // Remove old submit handler if exists
+    const oldHandler = form.onsubmit;
+    form.onsubmit = null;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const ratingInput = document.getElementById('rating-value');
+        const textInput = document.getElementById('review-text');
+        
+        if (!ratingInput || !textInput) {
+            alert('Form error. Please refresh.');
+            return;
+        }
+        
+        const rating = parseInt(ratingInput.value);
+        const text = textInput.value.trim();
+
+        console.log('📤 Submitting - Rating:', rating, 'Text:', text);
+
+        // Validation
+        if (!rating || rating === 0) {
+            alert(' Please select a rating (click on stars)');
+            return;
+        }
+
+        if (!text || text.length < 10) {
+            alert(' Review must be at least 10 characters');
+            return;
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+        }
+
+        try {
+            await submitReview(placeId, rating, text);
+            alert(' Review submitted successfully!');
+            setTimeout(() => window.location.reload(), 1000);
+        } catch (error) {
+            console.error(' Error:', error);
+            alert(' ' + error.message);
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Review';
+            }
+        }
+    });
+    
+    console.log('Review form ready');
+}
+
+// ========== Initialize ==========
+document.addEventListener('DOMContentLoaded', () => {
+    updateAuthUI();
+    setupLogout();
+    setupLoginForm();
+    displayPlaces();
+    displayPlaceDetails();
+});
