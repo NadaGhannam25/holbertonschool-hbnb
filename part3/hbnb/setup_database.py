@@ -22,7 +22,7 @@ def main():
     """Setup database with sample data"""
     
     print("\n" + "="*60)
-    print("🚀 HBnB Database Setup")
+    print("HBnB Database Setup")
     print("="*60)
     
     # Create app
@@ -31,17 +31,17 @@ def main():
     with app.app_context():
         try:
             # Step 1: Drop all tables
-            print("\n🗑️  Dropping existing tables...")
+            print("\n  Dropping existing tables...")
             db.drop_all()
-            print("   ✅ Tables dropped")
+            print(" Tables dropped")
             
             # Step 2: Create all tables
-            print("\n📦 Creating fresh tables...")
+            print("\n Creating fresh tables...")
             db.create_all()
-            print("   ✅ Tables created")
+            print("    Tables created")
             
             # Step 3: Create Users
-            print("\n👤 Creating users...")
+            print("\n Creating users...")
             
             admin = User(
                 email='admin@hbnb.com',
@@ -89,10 +89,10 @@ def main():
             db.session.add(saleh)
             
             db.session.commit()
-            print(f"   ✅ Created {User.query.count()} users")
+            print(f"    Created {User.query.count()} users")
             
             # Step 4: Create Amenities
-            print("\n🏷️  Creating amenities...")
+            print("\n Creating amenities...")
             
             amenities_list = ['WiFi', 'Pool', 'Parking', 'Breakfast', 'Gym', 'AC']
             amenities = []
@@ -103,10 +103,10 @@ def main():
                 amenities.append(amenity)
             
             db.session.commit()
-            print(f"   ✅ Created {Amenity.query.count()} amenities")
+            print(f"    Created {Amenity.query.count()} amenities")
             
             # Step 5: Create Places
-            print("\n🏠 Creating places...")
+            print("\n Creating places...")
             
             # Reload to get IDs
             wifi = Amenity.query.filter_by(name='WiFi').first()
@@ -180,10 +180,10 @@ def main():
             db.session.add(place5)
             
             db.session.commit()
-            print(f"   ✅ Created {Place.query.count()} places")
+            print(f"    Created {Place.query.count()} places")
             
             # Step 6: Create Reviews
-            print("\n⭐ Creating reviews...")
+            print("\n Creating reviews...")
             
             reviews_data = [
                 (place1.id, saleh.id, 5, 'مكان رائع جداً! أنصح الجميع بزيارته'),
@@ -203,14 +203,14 @@ def main():
                 db.session.add(review)
             
             db.session.commit()
-            print(f"   ✅ Created {Review.query.count()} reviews")
+            print(f"    Created {Review.query.count()} reviews")
             
             # Success Summary
             print("\n" + "="*60)
-            print("✅ Database setup completed successfully!")
+            print(" Database setup completed successfully!")
             print("="*60)
             
-            print("\n📧 Login Credentials:")
+            print("\n Login Credentials:")
             print("-" * 60)
             print("  admin@hbnb.com     | admin123     | (Admin)")
             print("  sondos@hbnb.com    | sondos123    | (User)")
@@ -219,13 +219,13 @@ def main():
             print("  saleh@hbnb.com     | saleh123     | (User)")
             print("-" * 60)
             
-            print("\n📊 Database Summary:")
-            print(f"  👥 Users:      {User.query.count()}")
-            print(f"  🏠 Places:     {Place.query.count()}")
-            print(f"  ⭐ Reviews:    {Review.query.count()}")
-            print(f"  🏷️  Amenities: {Amenity.query.count()}")
+            print("\n Database Summary:")
+            print(f"   Users:      {User.query.count()}")
+            print(f"   Places:     {Place.query.count()}")
+            print(f"   Reviews:    {Review.query.count()}")
+            print(f"    Amenities: {Amenity.query.count()}")
             
-            print("\n💡 Next Steps:")
+            print("\n Next Steps:")
             print("  1. Run backend:  python3 run.py")
             print("  2. Test login with credentials above")
             print("  3. All places should now be visible!")
@@ -235,7 +235,7 @@ def main():
             return 0
             
         except Exception as e:
-            print(f"\n❌ Error occurred: {e}")
+            print(f"\n Error occurred: {e}")
             import traceback
             traceback.print_exc()
             return 1
