@@ -177,6 +177,49 @@ Part 3 completes the transition to a persistent and scalable backend by ensuring
 At this stage, HBnB is prepared to support future features, advanced extensions, and deployment in a production-ready environment.
 
 ---
+
+# Part 4 – Simple Web Client
+
+In this part of the HBnB Evolution project, we developed a simple front-end application and connected it to the existing RESTful API.  
+The goal was to build a functional web interface using HTML, CSS, and JavaScript that communicates dynamically with the backend.
+
+## Main Features
+- Fetch data from the API using `fetch()`
+- Display places (name, price, description, location, amenities)
+- Implement filtering (price, city, amenities)
+- Handle authentication with JWT (if enabled)
+- Maintain clear separation between front-end and back-end
+
+## Structure
+The project includes:
+- HTML pages (index, login, place, etc.)
+- `style.css` for styling
+- `script.js` for API communication
+- Image assets and README
+
+## Project Preview
+
+<div align="center">
+<img width="300" height="650" alt="image" src="https://github.com/user-attachments/assets/5eec15d9-1783-43a8-a6c9-c9403a6281ae" /> 
+<img width="300" height="650" alt="image" src="https://github.com/user-attachments/assets/852d0d61-5280-45af-a79d-01b27e94eeac" /> 
+</div>
+
+<div align="center"> 
+<img width="300" height="650" alt="image" src="https://github.com/user-attachments/assets/de361558-be2e-4593-8782-d1c97854da13" />
+<img width="300" height="650" alt="image" src="https://github.com/user-attachments/assets/d1c49e58-4a40-48b4-896a-7fc0099a3cd1" /> 
+</div>
+
+## How to Run
+1. Start the backend server.
+2. Open `index.html` in your browser.
+3. Ensure the API base URL is correctly set in `script.js`.
+
+## Summary
+
+This phase completes the integration between the front-end and back-end, turning the HBnB system into a fully interactive web application.
+
+---
+
 ## Authors
 
 ### Shaden Majed Alalwani  
